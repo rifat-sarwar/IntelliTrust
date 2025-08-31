@@ -1,0 +1,20 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "avoid-sha3": "warn",
+    "avoid-suicide": "error",
+    "avoid-throw": "error",
+    "avoid-tx-origin": "error",
+    "compiler-version": ["error", "^0.8.0"],
+    "func-visibility": ["warn", {"ignoreConstructors": true}],
+    "max-line-length": ["warn", 120],
+    "no-empty-blocks": "warn",
+    "no-inline-assembly": "warn",
+    "no-unused-vars": "error",
+    "not-rely-on-time": "warn",
+    "reentrancy": "error",
+    "security/no-block-members": "error",
+    "security/no-low-level-calls": "error",
+    "security/no-unchecked-call": "warn"
+  }
+}

@@ -142,32 +142,51 @@ async def get_verification_result(
         verified_at=verification.verified_at
     )
 
-@router.get("/my-verifications", response_model=List[VerificationResponse])
+@router.get("/my-verifications")
 async def get_my_verifications(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
     limit: int = 10,
-    offset: int = 0
+    offset: int = 0,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Get user's verification history
+    Get verification history for the current user
     """
-    verifications = db.query(Verification).filter(
-        Verification.verifier_id == current_user.id
-    ).order_by(Verification.created_at.desc()).offset(offset).limit(limit).all()
-    
-    return [
-        VerificationResponse(
-            id=ver.id,
-            document_id=ver.document_id,
-            credential_id=ver.credential_id,
-            verification_type=ver.verification_type,
-            status=ver.status,
-            result=ver.result,
-            verified_at=ver.verified_at
-        )
-        for ver in verifications
-    ]
+    try:
+        query = db.query(Verification).filter(Verification.verifier_id == current_user.id)
+        
+        if status:
+            query = query.filter(Verification.status == status)
+        
+        # Get total count
+        total = query.count()
+        
+        # Get paginated verifications
+        verifications = query.order_by(Verification.created_at.desc()).offset(offset).limit(limit).all()
+        
+        return {
+            "verifications": [
+                {
+                    "id": ver.id,
+                    "document_id": ver.document_id,
+                    "credential_id": ver.credential_id,
+                    "verification_type": ver.verification_type,
+                    "status": ver.status,
+                    "result": ver.result,
+                    "created_at": ver.created_at.isoformat(),
+                    "completed_at": ver.completed_at.isoformat() if ver.completed_at else None
+                }
+                for ver in verifications
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting verification history: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get verification history")
 
 @router.post("/verify-qr")
 async def verify_qr_code(

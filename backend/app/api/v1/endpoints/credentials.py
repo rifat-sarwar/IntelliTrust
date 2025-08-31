@@ -102,37 +102,59 @@ async def issue_credential(
         logger.error(f"Error issuing credential: {str(e)}")
         raise HTTPException(status_code=500, detail="Credential issuance failed")
 
-@router.get("/my-credentials", response_model=List[CredentialResponse])
+@router.get("/my-credentials")
 async def get_my_credentials(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    status: Optional[str] = None,
     limit: int = 10,
-    offset: int = 0
+    offset: int = 0,
+    status: Optional[str] = None,
+    credential_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Get user's credentials (as holder)
+    Get credentials for the current user
     """
-    query = db.query(Credential).filter(Credential.holder_id == current_user.id)
-    
-    if status:
-        query = query.filter(Credential.status == status)
-    
-    credentials = query.order_by(Credential.issued_at.desc()).offset(offset).limit(limit).all()
-    
-    return [
-        CredentialResponse(
-            id=cred.id,
-            title=cred.title,
-            credential_type=cred.credential_type,
-            holder_id=cred.holder_id,
-            issuer_id=cred.issuer_id,
-            status=cred.status,
-            issued_at=cred.issued_at,
-            expires_at=cred.expires_at
-        )
-        for cred in credentials
-    ]
+    try:
+        query = db.query(Credential).filter(Credential.holder_id == current_user.id)
+        
+        if status:
+            query = query.filter(Credential.status == status)
+        
+        if credential_type:
+            query = query.filter(Credential.credential_type == credential_type)
+        
+        # Get total count
+        total = query.count()
+        
+        # Get paginated credentials
+        credentials = query.order_by(Credential.issued_at.desc()).offset(offset).limit(limit).all()
+        
+        return [
+            {
+                "id": cred.id,
+                "credential_type": cred.credential_type,
+                "status": cred.status,
+                "issued_at": cred.issued_at.isoformat() if cred.issued_at else None,
+                "expires_at": cred.expires_at.isoformat() if cred.expires_at else None,
+                "revoked_at": cred.revoked_at.isoformat() if cred.revoked_at else None,
+                "issuer": {
+                    "id": cred.issuer.id,
+                    "name": cred.issuer.full_name,
+                    "organization": cred.issuer.organization.name if cred.issuer.organization else None
+                } if cred.issuer else None,
+                "document": {
+                    "id": cred.document.id,
+                    "title": cred.document.title,
+                    "document_type": cred.document.document_type
+                } if cred.document else None,
+                "metadata": cred.metadata
+            }
+            for cred in credentials
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error getting user credentials: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get credentials")
 
 @router.get("/issued-credentials", response_model=List[CredentialResponse])
 async def get_issued_credentials(

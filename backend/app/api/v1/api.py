@@ -8,7 +8,10 @@ from app.api.v1.endpoints import (
     organizations,
     blockchain,
     ai_analysis,
-    webhooks
+    webhooks,
+    dashboard,
+    reports,
+    qr_service
 )
 from fastapi import APIRouter
 
@@ -24,6 +27,9 @@ api_router.include_router(organizations.router, prefix="/organizations", tags=["
 api_router.include_router(blockchain.router, prefix="/blockchain", tags=["blockchain"])
 api_router.include_router(ai_analysis.router, prefix="/ai-analysis", tags=["ai-analysis"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+api_router.include_router(qr_service.router, prefix="/qr", tags=["qr-service"])
 
 # Health check endpoint
 @api_router.get("/health")
@@ -31,5 +37,15 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "IntelliTrust API",
+        "version": "1.0.0"
+    }
+
+# Root endpoint
+@api_router.get("/")
+async def root():
+    return {
+        "message": "Welcome to IntelliTrust API",
+        "docs": "/docs",
+        "health": "/health",
         "version": "1.0.0"
     }

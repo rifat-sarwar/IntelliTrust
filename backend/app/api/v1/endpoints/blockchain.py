@@ -180,6 +180,46 @@ async def get_user_transactions(
         "total": len(transactions)
     }
 
+@router.get("/demo-stats")
+async def get_demo_statistics():
+    """
+    Get demo statistics for competition presentation
+    """
+    try:
+        blockchain_service = BlockchainService()
+        blockchain_info = await blockchain_service.get_blockchain_info()
+        
+        return {
+            "project_name": "IntelliTrust - AI-Powered Blockchain Document Verification",
+            "competition_ready": True,
+            "blockchain_capabilities": blockchain_info.get("demo_features", {}),
+            "performance_metrics": blockchain_info.get("performance_metrics", {}),
+            "total_documents_processed": blockchain_info.get("total_documents", 0),
+            "total_transactions": blockchain_info.get("total_transactions", 0),
+            "network_status": blockchain_info.get("network_status", {}),
+            "key_features": [
+                "🔐 Secure Document Anchoring",
+                "🔍 AI-Powered Document Analysis", 
+                "📊 Real-time Audit Trail",
+                "🌐 Multi-Blockchain Support",
+                "⚡ High Performance Architecture",
+                "🛡️ Enterprise Security",
+                "📱 Modern Web Interface",
+                "🔗 Blockchain Verification"
+            ],
+            "use_cases": [
+                "Academic Credential Verification",
+                "Medical Record Authentication", 
+                "Legal Document Validation",
+                "Financial Document Security",
+                "Government Certificate Verification"
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting demo stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get demo statistics")
+
 async def anchor_document_background(document_id: int, file_hash: str, user_did: str, db: Session):
     """
     Background task to anchor document to blockchain
