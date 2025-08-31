@@ -1,0 +1,90 @@
+name: "intellitrust-network"
+version: "1.0"
+
+channels:
+  intellitrust-channel:
+    orderers:
+      - orderer.intellitrust.com
+    peers:
+      peer0.org1.intellitrust.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer0.org2.intellitrust.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.intellitrust.com
+    certificateAuthorities:
+      - ca.org1.intellitrust.com
+    adminPrivateKey:
+      path: crypto-config/peerOrganizations/org1.intellitrust.com/users/Admin@org1.intellitrust.com/msp/keystore/priv_sk
+    signedCert:
+      path: crypto-config/peerOrganizations/org1.intellitrust.com/users/Admin@org1.intellitrust.com/msp/signcerts/Admin@org1.intellitrust.com-cert.pem
+
+  Org2:
+    mspid: Org2MSP
+    peers:
+      - peer0.org2.intellitrust.com
+    certificateAuthorities:
+      - ca.org2.intellitrust.com
+    adminPrivateKey:
+      path: crypto-config/peerOrganizations/org2.intellitrust.com/users/Admin@org2.intellitrust.com/msp/keystore/priv_sk
+    signedCert:
+      path: crypto-config/peerOrganizations/org2.intellitrust.com/users/Admin@org2.intellitrust.com/msp/signcerts/Admin@org2.intellitrust.com-cert.pem
+
+orderers:
+  orderer.intellitrust.com:
+    url: grpcs://localhost:7050
+    tlsCACerts:
+      path: crypto-config/ordererOrganizations/intellitrust.com/orderers/orderer.intellitrust.com/msp/tlscacerts/tlsca.intellitrust.com-cert.pem
+    grpcOptions:
+      ssl-target-name-override: orderer.intellitrust.com
+      hostnameOverride: orderer.intellitrust.com
+
+peers:
+  peer0.org1.intellitrust.com:
+    url: grpcs://localhost:7051
+    tlsCACerts:
+      path: crypto-config/peerOrganizations/org1.intellitrust.com/peers/peer0.org1.intellitrust.com/msp/tlscacerts/tlsca.org1.intellitrust.com-cert.pem
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.intellitrust.com
+      hostnameOverride: peer0.org1.intellitrust.com
+
+  peer0.org2.intellitrust.com:
+    url: grpcs://localhost:8051
+    tlsCACerts:
+      path: crypto-config/peerOrganizations/org2.intellitrust.com/peers/peer0.org2.intellitrust.com/msp/tlscacerts/tlsca.org2.intellitrust.com-cert.pem
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.intellitrust.com
+      hostnameOverride: peer0.org2.intellitrust.com
+
+certificateAuthorities:
+  ca.org1.intellitrust.com:
+    url: https://localhost:7054
+    caName: ca-org1
+    tlsCACerts:
+      path: crypto-config/peerOrganizations/org1.intellitrust.com/ca/ca.org1.intellitrust.com-cert.pem
+    registrar:
+      - enrollId: admin
+        enrollSecret: adminpw
+    httpOptions:
+      verify: false
+
+  ca.org2.intellitrust.com:
+    url: https://localhost:8054
+    caName: ca-org2
+    tlsCACerts:
+      path: crypto-config/peerOrganizations/org2.intellitrust.com/ca/ca.org2.intellitrust.com-cert.pem
+    registrar:
+      - enrollId: admin
+        enrollSecret: adminpw
+    httpOptions:
+      verify: false

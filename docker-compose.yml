@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: intellitrust-postgres
+    environment:
+      POSTGRES_DB: intellitrust
+      POSTGRES_USER: intellitrust
+      POSTGRES_PASSWORD: intellitrust123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - intellitrust-network
+
+  # Redis for caching and message queue
+  redis:
+    image: redis:7-alpine
+    container_name: intellitrust-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - intellitrust-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: intellitrust-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://intellitrust:intellitrust123@postgres:5432/intellitrust
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - intellitrust-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: intellitrust-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - intellitrust-network
+    command: npm run dev
+
+  # AI Engine Service
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    container_name: intellitrust-ai-engine
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MODEL_PATH=/app/models
+    volumes:
+      - ./ai-engine:/app
+      - ai_models:/app/models
+    depends_on:
+      - redis
+    networks:
+      - intellitrust-network
+    command: python main.py
+
+  # Hyperledger Fabric Network (Development)
+  fabric-ca:
+    image: hyperledger/fabric-ca:2.5
+    container_name: intellitrust-fabric-ca
+    ports:
+      - "7054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-intellitrust
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
+    volumes:
+      - ./blockchain/crypto:/etc/hyperledger/fabric-ca-server
+    networks:
+      - intellitrust-network
+    command: fabric-ca-server start -b admin:adminpw
+
+  # MinIO for S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: intellitrust-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    volumes:
+      - minio_data:/data
+    networks:
+      - intellitrust-network
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres_data:
+  redis_data:
+  ai_models:
+
+networks:
+  intellitrust-network:
+    driver: bridge
